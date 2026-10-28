@@ -66,7 +66,7 @@ class TaskViewModel: ViewModel() {
 
         val newTask = Task(
             id = nextId++,
-            title = title.trim(),
+            title = cleanTitle,
             category = "Personal",
             priority = priority
         )
