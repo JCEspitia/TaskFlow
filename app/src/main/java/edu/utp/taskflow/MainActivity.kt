@@ -28,17 +28,36 @@ import edu.utp.taskflow.ui.theme.TaskFlowTheme
 import edu.utp.taskflow.ui.components.NewTaskForm
 import edu.utp.taskflow.viewmodel.TaskViewModel
 
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+
+import edu.utp.taskflow.data.local.TaskDatabase
+import edu.utp.taskflow.data.repository.TaskRepository
+
+import edu.utp.taskflow.viewmodel.TaskViewModelFactory
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { TaskFlowDemo() }
+
+        val dao = TaskDatabase.getDatabase(applicationContext).taskDao()
+        val repository = TaskRepository(dao)
+        val factory = TaskViewModelFactory(repository)
+
+        setContent {
+            val taskViewModel: TaskViewModel = viewModel(factory = factory)
+
+            TaskFlowDemo(taskViewModel)
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TaskFlowDemo(taskViewModel: TaskViewModel = viewModel()) {
+    val tasks by taskViewModel.tasks.collectAsStateWithLifecycle()
+    val selectedFilter by taskViewModel.selectedFilter.collectAsStateWithLifecycle()
+
     // Único estado interactivo de la base visual: cambiar la paleta.
     // Las operaciones sobre tareas siguen pendientes para la clase.
     var palette by remember { mutableStateOf(TaskFlowPalette.OCEAN) }
@@ -61,8 +80,8 @@ fun TaskFlowDemo(taskViewModel: TaskViewModel = viewModel()) {
             color = MaterialTheme.colorScheme.background
         ) {
             TaskFlowScreen(
-                tasks = taskViewModel.tasks,
-                selectedFilter = taskViewModel.selectedFilter,
+                tasks = tasks,
+                selectedFilter = selectedFilter,
                 onFilterChange = taskViewModel::changeFilter,
                 onToggleTask = taskViewModel::toggleTask,
                 onDeleteTask = taskViewModel::deleteTask,

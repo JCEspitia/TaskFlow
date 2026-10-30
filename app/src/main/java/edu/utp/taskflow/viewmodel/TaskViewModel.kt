@@ -6,50 +6,54 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+import edu.utp.taskflow.data.repository.TaskRepository
 import edu.utp.taskflow.data.sampleTasks
 import edu.utp.taskflow.model.Task
 import edu.utp.taskflow.model.TaskFilter
 import edu.utp.taskflow.model.TaskPriority
 
-class TaskViewModel: ViewModel() {
+
+class TaskViewModel(
+    private val repository: TaskRepository
+): ViewModel() {
 
     // LISTA DE TAREAS
-    val tasks = mutableStateListOf<Task>().apply() {
-        addAll(sampleTasks)
-    }
+    val tasks = repository.tasks.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
 
     // FILTRO SELECCIONADO
-    var selectedFilter by mutableStateOf(TaskFilter.ALL)
-        private set
-
-    var nextId = (tasks.maxOfOrNull { it.id } ?: 0) + 1
+    private val _selectedFilter = MutableStateFlow(TaskFilter.ALL)
+    var selectedFilter = _selectedFilter.asStateFlow()
 
 
     // CAMBIO DE FILTRO
     fun changeFilter(filter: TaskFilter) {
-        selectedFilter = filter
+        _selectedFilter.value = filter
     }
 
     // COMPLETAR O REABRIR TAREA
     fun toggleTask(taskId: Int) {
-        val index = tasks.indexOfFirst { task ->
-            task.id == taskId
-        }
-
-        if (index != -1) {
-            val currentTask = tasks[index]
-
-            tasks[index] = currentTask.copy(
-                isCompleted = !currentTask.isCompleted
-            )
+        viewModelScope.launch {
+            repository.toggleTask(taskId)
         }
     }
 
     // ELIMINAR TAREA
     fun deleteTask(taskId: Int) {
-        tasks.removeAll { task ->
-            task.id == taskId
+        viewModelScope.launch {
+            repository.deleteTask(taskId)
         }
     }
 
@@ -58,19 +62,27 @@ class TaskViewModel: ViewModel() {
         title: String,
         priority: TaskPriority
     ){
-        val cleanTitle = title.trim()
-
-        if (cleanTitle.isBlank()){
-            return
+        viewModelScope.launch {
+            repository.addTask(title, priority)
         }
+    }
+}
 
-        val newTask = Task(
-            id = nextId++,
-            title = cleanTitle,
-            category = "Personal",
-            priority = priority
+
+class TaskViewModelFactory (
+    private val repository: TaskRepository
+) : ViewModelProvider.Factory {
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T: ViewModel> create(
+        modelClass: Class<T>
+    ): T {
+        require(
+            modelClass.isAssignableFrom(
+                TaskViewModel::class.java
+            )
         )
 
-        tasks.add(newTask)
+        return TaskViewModel(repository) as T
     }
 }
