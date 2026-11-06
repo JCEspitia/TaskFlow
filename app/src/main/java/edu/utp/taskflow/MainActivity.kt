@@ -29,12 +29,28 @@ import edu.utp.taskflow.ui.components.NewTaskForm
 import edu.utp.taskflow.viewmodel.TaskViewModel
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 
 import edu.utp.taskflow.data.local.TaskDatabase
 import edu.utp.taskflow.data.repository.TaskRepository
+import edu.utp.taskflow.ui.screens.TaskDetailScreen
 
 import edu.utp.taskflow.viewmodel.TaskViewModelFactory
 
+
+private object TaskRoutes {
+    const val LIST = "tasks"
+
+    const val DETAIL = "task_detail/{taskId}"
+
+    fun detail(taskId: Int): String {
+        return "task_detail/$taskId"
+    }
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,25 +90,66 @@ fun TaskFlowDemo(taskViewModel: TaskViewModel = viewModel()) {
         mutableStateOf(TaskPriority.MEDIUM)
     }
 
+    val navController = rememberNavController()
+
+
+
     TaskFlowTheme(palette = palette) {
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            TaskFlowScreen(
-                tasks = tasks,
-                selectedFilter = selectedFilter,
-                onFilterChange = taskViewModel::changeFilter,
-                onToggleTask = taskViewModel::toggleTask,
-                onDeleteTask = taskViewModel::deleteTask,
-                onNewTaskClick = {
-                    newTaskTitle = ""
-                    newTaskPriority = TaskPriority.MEDIUM
-                    showNewTaskSheet = true
-                },
-                palette = palette,
-                onPaletteChange = { palette = it }
-            )
+            NavHost(
+                navController = navController,
+                startDestination = TaskRoutes.LIST
+            ) {
+
+                // Pantalla principal
+                composable(TaskRoutes.LIST) {
+                    TaskFlowScreen(
+                        tasks = tasks,
+                        selectedFilter = selectedFilter,
+                        onFilterChange = taskViewModel::changeFilter,
+                        onToggleTask = taskViewModel::toggleTask,
+                        onDeleteTask = taskViewModel::deleteTask,
+                        onTaskClick = { taskId ->
+                            navController.navigate(
+                                TaskRoutes.detail(taskId)
+                            )
+                        },
+                        onNewTaskClick = {
+                            newTaskTitle = ""
+                            newTaskPriority = TaskPriority.MEDIUM
+                            showNewTaskSheet = true
+                        },
+                        palette = palette,
+                        onPaletteChange = { palette = it }
+                    )
+                }
+
+                // Pantalla de detalle
+                composable(
+                    route = TaskRoutes.DETAIL,
+                    arguments = listOf(
+                        navArgument("taskId") {
+                            type = NavType.IntType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val taskId = backStackEntry.arguments?.getInt("taskId")
+
+                    val selectedTask = tasks.firstOrNull {
+                        it.id == taskId
+                    }
+
+                    TaskDetailScreen(
+                        task = selectedTask,
+                        onBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+            }
         }
 
         if (showNewTaskSheet) {

@@ -67,6 +67,7 @@ fun TaskFlowScreen(
     onFilterChange: (TaskFilter) -> Unit,
     onToggleTask: (Int) -> Unit,
     onDeleteTask: (Int) -> Unit,
+    onTaskClick: (Int) -> Unit,
     onNewTaskClick: () -> Unit,
     palette: TaskFlowPalette,
     onPaletteChange: (TaskFlowPalette) -> Unit
@@ -83,7 +84,12 @@ fun TaskFlowScreen(
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 28.dp, bottom = 108.dp),
+            contentPadding = PaddingValues(
+                start = 20.dp,
+                end = 20.dp,
+                top = 28.dp,
+                bottom = 108.dp
+            ),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item { TaskHeader(palette, onPaletteChange) }
@@ -92,7 +98,11 @@ fun TaskFlowScreen(
             item {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Mis tareas", style = MaterialTheme.typography.titleLarge)
-                    Text("Mantén el enfoque en lo importante.", color = Muted, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Mantén el enfoque en lo importante.",
+                        color = Muted,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 }
             }
             item { TaskFilterBar(selectedFilter, onFilterChange) }
@@ -100,16 +110,28 @@ fun TaskFlowScreen(
                 item { EmptyTasksState() }
             } else {
                 items(visible, key = { it.id }) { task ->
-                    TaskCard(task, onToggle = { onToggleTask(task.id) }, onDelete = { onDeleteTask(task.id) })
+                    TaskCard(
+                        task,
+                        onToggle = { onToggleTask(task.id) },
+                        onDelete = { onDeleteTask(task.id) },
+                        onClick = { onTaskClick(task.id) })
                 }
             }
         }
         FloatingActionButton(
             onClick = onNewTaskClick,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(22.dp),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(22.dp),
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = Color.White,
             shape = RoundedCornerShape(20.dp)
-        ) { Text("＋  Nueva tarea", modifier = Modifier.padding(horizontal = 18.dp), fontWeight = FontWeight.SemiBold) }
+        ) {
+            Text(
+                "＋  Nueva tarea",
+                modifier = Modifier.padding(horizontal = 18.dp),
+                fontWeight = FontWeight.SemiBold
+            )
+        }
     }
 }

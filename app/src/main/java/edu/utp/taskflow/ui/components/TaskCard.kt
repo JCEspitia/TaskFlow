@@ -2,6 +2,7 @@ package edu.utp.taskflow.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,9 +55,9 @@ import edu.utp.taskflow.ui.theme.TaskFlowPalette
 
 
 @Composable
-fun TaskCard(task: Task, onToggle: () -> Unit, onDelete: () -> Unit) {
+fun TaskCard(task: Task, onToggle: () -> Unit, onDelete: () -> Unit, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
