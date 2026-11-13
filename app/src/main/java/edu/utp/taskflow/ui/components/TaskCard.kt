@@ -55,16 +55,30 @@ import edu.utp.taskflow.ui.theme.TaskFlowPalette
 
 
 @Composable
-fun TaskCard(task: Task, onToggle: () -> Unit, onDelete: () -> Unit, onClick: () -> Unit) {
+fun TaskCard(
+    task: Task,
+    onToggle: () -> Unit,
+    onDelete: () -> Unit,
+    onClick: () -> Unit,
+    readOnly: Boolean = false
+) {
     Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(
+                enabled = !readOnly,
+                onClick = onClick
+            ),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = task.isCompleted, onCheckedChange = { onToggle() })
+                Checkbox(checked = task.isCompleted, onCheckedChange = { onToggle() }, enabled = !readOnly)
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         task.title,
@@ -76,13 +90,19 @@ fun TaskCard(task: Task, onToggle: () -> Unit, onDelete: () -> Unit, onClick: ()
                     )
                     Text(task.category, style = MaterialTheme.typography.bodyMedium, color = Muted)
                 }
-                TextButton(onClick = onDelete) { Text("✕", color = Muted) }
+                if (!readOnly) {
+                    TextButton(onClick = onDelete) { Text("✕", color = Muted) }
+                }
             }
             HorizontalDivider(color = SoftBorder)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PriorityBadge(task.priority)
                 Spacer(modifier = Modifier.weight(1f))
-                Text(if (task.isCompleted) "Completada" else "Pendiente", color = if (task.isCompleted) Success else Muted, style = MaterialTheme.typography.labelSmall)
+                Text(
+                    if (task.isCompleted) "Completada" else "Pendiente",
+                    color = if (task.isCompleted) Success else Muted,
+                    style = MaterialTheme.typography.labelSmall
+                )
             }
         }
     }
@@ -105,7 +125,11 @@ fun PriorityBadge(priority: TaskPriority) {
         TaskPriority.MEDIUM -> Color(0xFFFEF3C7)
         TaskPriority.LOW -> Color(0xFFD1FAE5)
     }
-    Box(modifier = Modifier.background(background, RoundedCornerShape(40.dp)).padding(horizontal = 10.dp, vertical = 6.dp)) {
+    Box(
+        modifier = Modifier
+            .background(background, RoundedCornerShape(40.dp))
+            .padding(horizontal = 10.dp, vertical = 6.dp)
+    ) {
         Text(label, color = tint, style = MaterialTheme.typography.labelSmall)
     }
 }
