@@ -1,15 +1,16 @@
 package edu.utp.taskflow.data.remote
 
 data class RemoteTaskDto(
-    val id: Int,
-    val todo: String,
-    val completed: Boolean,
-    val userId: Int
+    val id: String,
+    val title: String,
+    val category: String,
+    val priority: String,
+    val isCompleted: Boolean
 )
 
-data class RemoteTasksResponse(
-    val todos: List<RemoteTaskDto>,
-    val total: Int,
-    val skip: Int,
-    val limit: Int
+data class TaskRequestDto (
+    val title: String,
+    val category: String,
+    val priority: String,
+    val isCompleted: Boolean
 )

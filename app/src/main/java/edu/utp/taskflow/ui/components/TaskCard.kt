@@ -60,13 +60,14 @@ fun TaskCard(
     onToggle: () -> Unit,
     onDelete: () -> Unit,
     onClick: () -> Unit,
-    readOnly: Boolean = false
+    readOnly: Boolean = false,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
-                enabled = !readOnly,
+                enabled = enabled && !readOnly,
                 onClick = onClick
             ),
         shape = RoundedCornerShape(20.dp),
@@ -78,7 +79,11 @@ fun TaskCard(
             verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = task.isCompleted, onCheckedChange = { onToggle() }, enabled = !readOnly)
+                Checkbox(
+                    checked = task.isCompleted,
+                    onCheckedChange = { onToggle() },
+                    enabled = enabled && !readOnly
+                )
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         task.title,
@@ -91,7 +96,7 @@ fun TaskCard(
                     Text(task.category, style = MaterialTheme.typography.bodyMedium, color = Muted)
                 }
                 if (!readOnly) {
-                    TextButton(onClick = onDelete) { Text("✕", color = Muted) }
+                    TextButton(onClick = onDelete, enabled = enabled) { Text("✕", color = Muted) }
                 }
             }
             HorizontalDivider(color = SoftBorder)
