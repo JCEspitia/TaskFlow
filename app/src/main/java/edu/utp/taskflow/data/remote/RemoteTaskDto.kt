@@ -5,12 +5,14 @@ data class RemoteTaskDto(
     val title: String,
     val category: String,
     val priority: String,
-    val isCompleted: Boolean
+    val isCompleted: Boolean,
+    val userId: String
 )
 
 data class TaskRequestDto (
     val title: String,
     val category: String,
     val priority: String,
-    val isCompleted: Boolean
+    val isCompleted: Boolean,
+    val userId: String
 )

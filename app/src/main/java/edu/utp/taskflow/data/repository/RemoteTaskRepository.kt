@@ -9,32 +9,37 @@ import edu.utp.taskflow.model.TaskPriority
 class RemoteTaskRepository(
     private val api: TaskApiService
 ) {
-    suspend fun getTasks(): List<Task> {
-        return api.getTasks().map { dto ->
-            dto.toTask()
-        }
+    suspend fun getTasks(userId: String): List<Task> {
+        return api.getTasks(userId)
+            .filter { it.userId == userId }
+            .map { dto ->
+                dto.toTask()
+            }
     }
 
     suspend fun createTask(
         title: String,
-        priority: TaskPriority
+        priority: TaskPriority,
+        userId: String
     ) {
         val request = TaskRequestDto(
             title = title,
             category = "MockAPI",
             priority = priority.name,
-            isCompleted = false
+            isCompleted = false,
+            userId = userId
         )
 
         api.createTask(request)
     }
 
-    suspend fun toggleTask(task: Task) {
+    suspend fun toggleTask(task: Task, userId: String) {
         val request = TaskRequestDto(
             title = task.title,
             category = task.category,
             priority = task.priority.name,
-            isCompleted = !task.isCompleted
+            isCompleted = !task.isCompleted,
+            userId = userId
         )
 
         api.updateTask(

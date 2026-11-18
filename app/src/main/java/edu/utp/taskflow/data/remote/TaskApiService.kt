@@ -9,8 +9,15 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TaskApiService {
+    // USUARIOS
+    @GET("users")
+    suspend fun getUsers(): List<UserDto>
+
+    // TAREAS
     @GET("tasks")
-    suspend fun getTasks(): List<RemoteTaskDto>
+    suspend fun getTasks(
+        @Query("userId") userId: String
+    ): List<RemoteTaskDto>
 
     @POST("tasks")
     suspend fun createTask(

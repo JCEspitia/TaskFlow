@@ -8,6 +8,7 @@ import edu.utp.taskflow.data.repository.RemoteTaskRepository
 import edu.utp.taskflow.model.Task
 import edu.utp.taskflow.model.TaskPriority
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +17,11 @@ import kotlinx.coroutines.launch
 class RemoteTaskViewModel(
     private val repository: RemoteTaskRepository
 ) : ViewModel() {
+
+    private var currentUserId: String? = null
+
+    private var loadJob: Job? = null
+    private var operationJob: Job? = null
 
     private val _tasks =
         MutableStateFlow<List<Task>>(emptyList())
@@ -45,17 +51,38 @@ class RemoteTaskViewModel(
         loadTasks()
     }
 
-    fun loadTasks() {
+    fun setUser(userId: String?) {
+        if (currentUserId == userId) return
 
+        loadJob?.cancel()
+        operationJob?.cancel()
+
+        currentUserId = userId
+
+        _tasks.value = emptyList()
+        _errorMessage.value = null
+        _isLoading.value = false
+        _isSaving.value = false
+
+        if (userId != null) {
+            loadTasks()
+        }
+    }
+
+    fun loadTasks() {
+        val userId = currentUserId ?: return
         if (_isSaving.value) return
 
-        viewModelScope.launch {
+        loadJob?.cancel()
 
-            _isLoading.value = true
-            _errorMessage.value = null
+        _isLoading.value = true
+        _errorMessage.value = null
+
+        loadJob = viewModelScope.launch {
+
 
             try {
-                _tasks.value = repository.getTasks()
+                _tasks.value = repository.getTasks(userId)
 
             } catch (e: CancellationException) {
                 throw e
@@ -76,17 +103,20 @@ class RemoteTaskViewModel(
     ) {
         if (title.isBlank()) return
 
-        executeOperation {
+        executeOperation { userId ->
             repository.createTask(
                 title = title.trim(),
-                priority = priority
+                priority = priority,
+                userId = userId
             )
         }
     }
 
     fun toggleTask(task: Task) {
-        executeOperation {
-            repository.toggleTask(task)
+        if (_tasks.value.none {it.id == task.id}) return
+
+        executeOperation { userId ->
+            repository.toggleTask(task = task, userId = userId)
         }
     }
 
@@ -94,34 +124,47 @@ class RemoteTaskViewModel(
         task: Task,
         title: String,
         priority: TaskPriority
-    ){
+    ) {
         // TODO: Por implementar
     }
 
-    fun deleteTask(taskId: Int){
+    fun deleteTask(taskId: Int) {
         executeOperation {
             repository.deleteTask(taskId)
         }
     }
 
     private fun executeOperation(
-        operation: suspend () -> Unit
+        operation: suspend (String) -> Unit
     ) {
+
+        val userId = currentUserId ?: return
         if (_isSaving.value || _isLoading.value) return
 
         _isSaving.value = true
         _errorMessage.value = null
 
-        viewModelScope.launch {
+        operationJob = viewModelScope.launch {
             try {
-                operation()
-                _tasks.value = repository.getTasks()
-            } catch (e: CancellationException){
+                operation(userId)
+
+                val updatedTasks = repository.getTasks(userId)
+
+                if (currentUserId == userId){
+                    _tasks.value = updatedTasks
+                }
+
+                _tasks.value = repository.getTasks(userId)
+            } catch (e: CancellationException) {
                 throw e
-            } catch (e: Exception){
-                _errorMessage.value = "No fue posible completar la operación"
+            } catch (e: Exception) {
+                if(currentUserId == userId) {
+                    _errorMessage.value = "No fue posible completar la operación"
+                }
             } finally {
-               _isSaving.value = false
+                if(currentUserId == userId) {
+                    _isSaving.value = false
+                }
             }
         }
 
